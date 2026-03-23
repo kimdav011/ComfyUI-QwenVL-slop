@@ -63,7 +63,7 @@ RUN pip uninstall -y uv 2>/dev/null || true && \
     rm -f /usr/local/bin/uv /usr/local/bin/uvx
 
 # Install ComfyUI latest stable version
-WORKDIR /ComfyUI
+WORKDIR /workspace/ComfyUI
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git . && \
     /opt/comfyui-env/bin/pip install --no-cache-dir -r requirements.txt && \
     /opt/comfyui-env/bin/pip install --no-cache-dir GitPython opencv-python && \
@@ -75,7 +75,7 @@ RUN /opt/comfyui-env/bin/pip install --upgrade --force-reinstall --no-cache-dir 
     /opt/comfyui-env/bin/pip cache purge
 
 # Install ALL ComfyUI custom nodes from VastAI provisioning + RunpodDirect
-RUN cd /ComfyUI/custom_nodes && \
+RUN cd /workspace/ComfyUI/custom_nodes && \
     git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
     git clone https://github.com/kijai/ComfyUI_essentials.git && \
     git clone https://github.com/huchukato/comfy-tagcomplete.git && \
@@ -104,10 +104,10 @@ RUN cd /ComfyUI/custom_nodes && \
     git clone https://github.com/melMass/comfy_mtb.git
 
 # Copy wildcards to Easy-Use (required for wildcard workflows)
-RUN cp -r /ComfyUI/custom_nodes/comfy-tagcomplete/wildcards/mbe /ComfyUI/custom_nodes/ComfyUI-Easy-Use/wildcards || echo "Wildcards copy completed (or already exists)"
+RUN cp -r /workspace/ComfyUI/custom_nodes/comfy-tagcomplete/wildcards/mbe /workspace/ComfyUI/custom_nodes/ComfyUI-Easy-Use/wildcards || echo "Wildcards copy completed (or already exists)"
 
 # Install requirements for all custom nodes
-RUN bash -c 'cd /ComfyUI/custom_nodes && for node_dir in */; do if [ -f "$node_dir/requirements.txt" ]; then echo "Installing requirements for $node_dir..." && /opt/comfyui-env/bin/pip install --no-cache-dir -r "$node_dir/requirements.txt" || echo "Failed to install requirements for $node_dir"; fi; done' && \
+RUN bash -c 'cd /workspace/ComfyUI/custom_nodes && for node_dir in */; do if [ -f "$node_dir/requirements.txt" ]; then echo "Installing requirements for $node_dir..." && /opt/comfyui-env/bin/pip install --no-cache-dir -r "$node_dir/requirements.txt" || echo "Failed to install requirements for $node_dir"; fi; done' && \
     /opt/comfyui-env/bin/pip cache purge
 
 # Install additional essential dependencies
@@ -115,9 +115,9 @@ RUN /opt/comfyui-env/bin/pip install --no-cache-dir jupyter sageattention && \
     /opt/comfyui-env/bin/pip cache purge
 
 # Clean up heavy Git files to save space (keep repo structure for updates)
-RUN find /ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "*.pack" -delete + || true && \
-    find /ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "pack-*.idx" -delete + || true && \
-    find /ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "objects" -type d -exec rm -rf {} + || true
+RUN find /workspace/ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "*.pack" -delete + || true && \
+    find /workspace/ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "pack-*.idx" -delete + || true && \
+    find /workspace/ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "objects" -type d -exec rm -rf {} + || true
 
 # Create FileBrowser (RunPod method)
 RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
@@ -126,7 +126,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh |
 RUN mkdir -p /filebrowser && \
     mkdir -p /filebrowser/database && \
     mkdir -p /filebrowser/files && \
-    ln -sf /ComfyUI /filebrowser/files/ComfyUI && \
+    ln -sf /workspace/ComfyUI /filebrowser/files/ComfyUI && \
     echo '{"port": 8080, "baseURL": "", "address": "0.0.0.0", "log": "stdout", "database": "/filebrowser/database/filebrowser.db", "root": "/filebrowser/files", "noauth": true}' > /filebrowser/.config.json
 
 # Create FileBrowser startup script
@@ -146,7 +146,7 @@ echo "📓 Starting Jupyter Lab on port 8888"
 echo "🌐 Access at: http://0.0.0.0:8888"
 echo "🔑 No token required"
 echo ""
-cd /ComfyUI
+cd /workspace/ComfyUI
 echo "🔧 Starting Jupyter Lab with terminal support..."
 nohup /opt/comfyui-env/bin/jupyter lab \
     --allow-root \
@@ -154,8 +154,8 @@ nohup /opt/comfyui-env/bin/jupyter lab \
     --port=8888 \
     --ip=0.0.0.0 \
     --FileContentsManager.delete_to_trash=False \
-    --FileContentsManager.preferred_dir=/ComfyUI \
-    --ServerApp.root_dir=/ComfyUI \
+    --FileContentsManager.preferred_dir=/workspace/ComfyUI \
+    --ServerApp.root_dir=/workspace/ComfyUI \
     --ServerApp.terminado_settings='{"shell_command":["/bin/bash"]}' \
     --IdentityProvider.token="" \
     --ServerApp.allow_origin=* &> /jupyter.log &
@@ -180,42 +180,42 @@ EOF
 RUN chmod +x /usr/local/bin/start-jupyter.sh
 
 # Create user directory structure
-RUN mkdir -p /ComfyUI/user/default/workflows
+RUN mkdir -p /workspace/ComfyUI/user/default/workflows
 
 # Create models directories
-RUN mkdir -p /ComfyUI/models/vae && \
-    mkdir -p /ComfyUI/models/upscale_models && \
-    mkdir -p /ComfyUI/models/text_encoders
+RUN mkdir -p /workspace/ComfyUI/models/vae && \
+    mkdir -p /workspace/ComfyUI/models/upscale_models && \
+    mkdir -p /workspace/ComfyUI/models/text_encoders
 
 # Clean up heavy Git files to save space (keep repo structure for updates)
-RUN find /ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "*.pack" -delete + || true && \
-    find /ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "pack-*.idx" -delete + || true && \
-    find /ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "objects" -type d -exec rm -rf {} + || true
+RUN find /workspace/ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "*.pack" -delete + || true && \
+    find /workspace/ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "pack-*.idx" -delete + || true && \
+    find /workspace/ComfyUI/custom_nodes -name ".git" -type d -exec find {} -name "objects" -type d -exec rm -rf {} + || true
 
 # Aggressive cleanup to reduce image size
 RUN rm -rf /tmp/* \
        && rm -rf /var/lib/apt/lists/* \
        && rm -rf /var/cache/apt/archives/* \
-       && find /ComfyUI -name "*.pyc" -delete \
-       && find /ComfyUI -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true \
+    && find /workspace/ComfyUI -name "*.pyc" -delete \
+    && find /workspace/ComfyUI -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true \
        && /opt/comfyui-env/bin/pip cache purge
 
 # Set ComfyUI arguments (optimized for WAN2.2 with SageAttention)
 ENV COMFYUI_ARGS="--listen 0.0.0.0 --port 8188 --disable-auto-launch --enable-cors-header --fast fp16_accumulation --use-sage-attention --reserve-vram 2 --cuda-malloc --async-offload"
 
 # Create startup script (RunPod style with dynamic workflow updates)
-RUN cat > /ComfyUI/start.sh << 'EOF'
+RUN cat > /workspace/ComfyUI/start.sh << 'EOF'
 #!/bin/bash
 set -e  # Exit the script if any statement returns a non-true return value
 
-COMFYUI_DIR="/ComfyUI"
+COMFYUI_DIR="/workspace/ComfyUI"
 FILEBROWSER_CONFIG="/filebrowser/.config.json"
 DB_FILE="/filebrowser/database/filebrowser.db"
 
 # Function to update custom nodes
 update_nodes() {
     echo "🔄 Updating custom nodes..."
-    cd /ComfyUI/custom_nodes
+    cd /workspace/ComfyUI/custom_nodes
     
     # List of custom nodes to update
     nodes=(
@@ -270,8 +270,8 @@ update_nodes() {
 # Function to download latest workflows
 update_workflows() {
     echo "🔄 Updating workflows from latest versions..."
-    mkdir -p /ComfyUI/user/default/workflows
-    cd /ComfyUI/user/default/workflows
+    mkdir -p /workspace/ComfyUI/user/default/workflows
+    cd /workspace/ComfyUI/user/default/workflows
     
     # List of latest workflows
     workflows=(
@@ -300,43 +300,43 @@ update_workflows() {
 
 download_models() {
     echo "🔄 Downloading essential models..."
-    cd /ComfyUI
+    cd /workspace/ComfyUI
     
     # Download VAE models
-    if [ ! -f "/ComfyUI/models/vae/wan_2.1_vae.safetensors" ]; then
+    if [ ! -f "/workspace/ComfyUI/models/vae/wan_2.1_vae.safetensors" ]; then
         echo "  📥 Downloading WAN 2.1 VAE..."
-        wget -q "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors" -O "/ComfyUI/models/vae/wan_2.1_vae.safetensors" || echo "  ⚠️ Failed to download WAN 2.1 VAE"
+        wget -q "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors" -O "/workspace/ComfyUI/models/vae/wan_2.1_vae.safetensors" || echo "  ⚠️ Failed to download WAN 2.1 VAE"
     fi
     
         
-    if [ ! -f "/ComfyUI/models/vae/sdxl_vae.safetensors" ]; then
+    if [ ! -f "/workspace/ComfyUI/models/vae/sdxl_vae.safetensors" ]; then
         echo "  📥 Downloading SDXL VAE..."
-        wget -q "https://huggingface.co/huchukato/favs/resolve/main/VAE/sdxl.vae.safetensors" -O "/ComfyUI/models/vae/sdxl_vae.safetensors" || echo "  ⚠️ Failed to download SDXL VAE"
+        wget -q "https://huggingface.co/huchukato/favs/resolve/main/VAE/sdxl.vae.safetensors" -O "/workspace/ComfyUI/models/vae/sdxl_vae.safetensors" || echo "  ⚠️ Failed to download SDXL VAE"
     fi
     
     # Download upscale models
-    if [ ! -f "/ComfyUI/models/upscale_models/2xLexicaRRDBNet.pth" ]; then
+    if [ ! -f "/workspace/ComfyUI/models/upscale_models/2xLexicaRRDBNet.pth" ]; then
         echo "  📥 Downloading 2xLexicaRRDBNet upscale model..."
-        wget -q "https://huggingface.co/huchukato/favs/resolve/main/ESRGAN/2xLexicaRRDBNet.pth" -O "/ComfyUI/models/upscale_models/2xLexicaRRDBNet.pth" || echo "  ⚠️ Failed to download upscale model"
+        wget -q "https://huggingface.co/huchukato/favs/resolve/main/ESRGAN/2xLexicaRRDBNet.pth" -O "/workspace/ComfyUI/models/upscale_models/2xLexicaRRDBNet.pth" || echo "  ⚠️ Failed to download upscale model"
     fi
     
-    if [ ! -f "/ComfyUI/models/upscale_models/2xLexicaRRDBNet_Sharp.pth" ]; then
+    if [ ! -f "/workspace/ComfyUI/models/upscale_models/2xLexicaRRDBNet_Sharp.pth" ]; then
         echo "  📥 Downloading 2xLexicaRRDBNet Sharp upscale model..."
-        wget -q "https://huggingface.co/huchukato/favs/resolve/main/ESRGAN/2xLexicaRRDBNet_Sharp.pth" -O "/ComfyUI/models/upscale_models/2xLexicaRRDBNet_Sharp.pth" || echo "  ⚠️ Failed to download Sharp upscale model"
+        wget -q "https://huggingface.co/huchukato/favs/resolve/main/ESRGAN/2xLexicaRRDBNet_Sharp.pth" -O "/workspace/ComfyUI/models/upscale_models/2xLexicaRRDBNet_Sharp.pth" || echo "  ⚠️ Failed to download Sharp upscale model"
     fi
     
     # Download text encoder
-    if [ ! -f "/ComfyUI/models/text_encoders/nsfw_wan_umt5-xxl_fp8_scaled.safetensors" ]; then
+    if [ ! -f "/workspace/ComfyUI/models/text_encoders/nsfw_wan_umt5-xxl_fp8_scaled.safetensors" ]; then
         echo "  📥 Downloading NSFW WAN UMT5-XXL text encoder..."
-        wget -q "https://huggingface.co/NSFW-API/NSFW-Wan-UMT5-XXL/resolve/main/nsfw_wan_umt5-xxl_fp8_scaled.safetensors" -O "/ComfyUI/models/text_encoders/nsfw_wan_umt5-xxl_fp8_scaled.safetensors" || echo "  ⚠️ Failed to download text encoder"
+        wget -q "https://huggingface.co/NSFW-API/NSFW-Wan-UMT5-XXL/resolve/main/nsfw_wan_umt5-xxl_fp8_scaled.safetensors" -O "/workspace/ComfyUI/models/text_encoders/nsfw_wan_umt5-xxl_fp8_scaled.safetensors" || echo "  ⚠️ Failed to download text encoder"
     fi
     
         
     echo "✅ Model download completed"
     echo "📋 Available models:"
-    ls -la /ComfyUI/models/vae/
-    ls -la /ComfyUI/models/upscale_models/
-    ls -la /ComfyUI/models/text_encoders/
+    ls -la /workspace/ComfyUI/models/vae/
+    ls -la /workspace/ComfyUI/models/upscale_models/
+    ls -la /workspace/ComfyUI/models/text_encoders/
 }
 
 echo "🚀 Starting ComfyUI-QwenVL-Mod on RunPod (Full Version)"
@@ -360,7 +360,7 @@ echo "📁 FileBrowser: http://0.0.0.0:8080"
 echo "📓 Jupyter Lab:  http://0.0.0.0:8888 (Terminal included)"
 echo "🎨 ComfyUI:    http://0.0.0.0:8188"
 echo "📋 Available workflows:"
-ls -la /ComfyUI/user/default/workflows/
+ls -la /workspace/ComfyUI/user/default/workflows/
 echo ""
 echo "💡 Models pre-loaded for immediate use"
 echo ""
@@ -402,10 +402,10 @@ echo "✅ ComfyUI started"
 # Tail the ComfyUI log
 tail -f /comfyui.log
 EOF
-RUN chmod +x /ComfyUI/start.sh
+RUN chmod +x /workspace/ComfyUI/start.sh
 
 # Set working directory
-WORKDIR /ComfyUI
+WORKDIR /workspace/ComfyUI
 
 # Expose ports
 EXPOSE 8080 8188 8888 22
@@ -415,4 +415,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://0.0.0.0:8188/system_stats || exit 1
 
 # Start ComfyUI
-CMD ["/ComfyUI/start.sh"]
+CMD ["/workspace/ComfyUI/start.sh"]

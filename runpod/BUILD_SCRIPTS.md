@@ -62,13 +62,13 @@ After building locally:
 # RTX 5090
 docker run -d --gpus all \
   -p 8080:8080 -p 8888:8888 -p 8188:8188 \
-  -v $(pwd)/output:/ComfyUI/output \
+  -v $(pwd)/output:/workspace/ComfyUI/output \
   comfyui-qwenvl-local:5090
 
 # RTX 4090  
 docker run -d --gpus all \
   -p 8080:8080 -p 8888:8888 -p 8188:8188 \
-  -v $(pwd)/output:/ComfyUI/output \
+  -v $(pwd)/output:/workspace/ComfyUI/output \
   comfyui-qwenvl-local:4090
 ```
 
